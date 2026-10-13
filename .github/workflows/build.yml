@@ -18,36 +18,9 @@ jobs:
           cordova create app com.bucheat.aimbot Aimbot
           cd app
           rm -rf www/*
-          cp -r ../* www/ 2>/dev/null || true
-          rm -rf www/.github 2>/dev/null || true
-
-      - name: Add Queries for Standoff 2
-        run: |
-          cd app
-          # Заменяем <platform name="android"></platform> на блок с queries
-          python3 - <<'PY'
-          import re
-          with open('config.xml', 'r', encoding='utf-8') as f:
-              xml = f.read()
-
-          block = '''<platform name="android">
-              <config-file target="AndroidManifest.xml" parent="/manifest">
-                  <queries>
-                      <package android:name="com.axlebolt.standoff2" />
-                  </queries>
-              </config-file>
-          </platform>'''
-
-          if '<platform name="android"' in xml:
-              xml = re.sub(r'<platform name="android">.*?</platform>', block, xml, flags=re.DOTALL)
-          else:
-              xml = xml.replace('</widget>', block + '\n</widget>')
-
-          with open('config.xml', 'w', encoding='utf-8') as f:
-              f.write(xml)
-          print('--- config.xml after edit ---')
-          print(xml)
-          PY
+          cp -r ../index.html www/ 2>/dev/null || true
+          cp -r ../*.png www/ 2>/dev/null || true
+          cp -r ../*.ttf www/ 2>/dev/null || true
 
       - name: Add Android Platform
         run: |
@@ -58,6 +31,15 @@ jobs:
         run: |
           cd app
           cordova plugin add cordova-plugin-app-launcher
+
+      - name: Patch AndroidManifest with queries
+        run: |
+          cd app
+          MANIFEST=platforms/android/app/src/main/AndroidManifest.xml
+          # Вставляем queries с явным xmlns:android ВНУТРИ тега package
+          sed -i 's|<application|<queries><package xmlns:android="http://schemas.android.com/apk/res/android" android:name="com.axlebolt.standoff2" /></queries><application|' $MANIFEST
+          echo "--- Manifest after patch ---"
+          grep -A2 queries $MANIFEST || echo "NO QUERIES FOUND"
 
       - name: Build APK
         run: |
