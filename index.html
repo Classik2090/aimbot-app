@@ -526,44 +526,33 @@
   /* ══════════════════════════════════════════
      ЗАПУСК STANDOFF 2 (только в APK)
      ══════════════════════════════════════════ */
-  const STANDOFF_PACKAGE = 'com.axlebolt.standoff2';
-
   function launchStandoff() {
-    // Способ 1: Cordova-плагин app-launcher
-    if (window.cordova && window.launcher) {
-      window.launcher.canLaunch(
-        { packageName: STANDOFF_PACKAGE },
-        function (can) {
-          if (can) {
-            window.launcher.launch(
+      var STANDOFF_PACKAGE = 'com.axlebolt.standoff2';
+
+      // Проверяем, что плагин вообще загрузился
+      if (window.plugins && window.plugins.launcher) {
+          window.plugins.launcher.canLaunch(
               { packageName: STANDOFF_PACKAGE },
-              function () { console.log('Standoff 2 запущен'); },
-              function (e) { console.warn('Ошибка запуска:', e); }
-            );
-          } else {
-            console.warn('Standoff 2 не установлен');
-            alert('Standoff 2 не установлен на устройстве');
+              function () {
+                  // Приложение видно — запускаем
+                  window.plugins.launcher.launch(
+                      { packageName: STANDOFF_PACKAGE },
+                      function () { console.log('Standoff 2 запущен'); },
+                      function (e) { alert('Ошибка запуска: ' + e); }
+                  );
+              },
+              function (e) {
+                  alert('Standoff 2 не установлен или невидим: ' + e);
+              }
+          );
+      } else {
+          // Плагин не подхватился — fallback через intent
+          try {
+              window.location.href = 'intent://launch#Intent;scheme=standoff;package=' + STANDOFF_PACKAGE + ';end';
+          } catch (e) {
+              console.warn('Intent fallback failed:', e);
           }
-        },
-        function (e) { console.warn('canLaunch error:', e); }
-      );
-      return;
-    }
-
-    // Способ 2 (запасной): через Android intent:// URL
-    // работает в некоторых WebView, но не во всех
-    try {
-      const intentUrl = 'intent://launch#Intent;scheme=standoff;package=' +
-                        STANDOFF_PACKAGE + ';end';
-      window.location.href = intentUrl;
-    } catch (e) {
-      console.warn('Intent fallback failed:', e);
-    }
-
-    // Способ 3 (совсем запасной): market:// открытие страницы игры
-    // setTimeout(() => {
-    //   window.location.href = 'market://details?id=' + STANDOFF_PACKAGE;
-    // }, 800);
+      }
   }
 
   function runLoading() {
@@ -587,14 +576,11 @@
         if (t < 1) {
           rafId = requestAnimationFrame(tick);
         } else {
-          // ═══ ФИНАЛ: показываем «Готово» и через 1.4 сек запускаем Standoff 2 ═══
           lTitle.textContent = 'Готово';
           lSub.textContent   = 'Успешно. Модуль активирован.';
 
           setTimeout(() => {
             loading.classList.remove('show');
-
-            // 🚀 ЗАПУСК STANDOFF 2
             launchStandoff();
           }, 1400);
         }
