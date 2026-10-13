@@ -443,7 +443,17 @@
   <div class="pct" id="pct">0.0<span class="sign">%</span></div>
 </div>
 
+<!-- ⚠️ ГЛАВНАЯ ПРАВКА: подключаем Cordova -->
+<script src="cordova.js"></script>
+
 <script>
+  /* ══════════════════════════════════════════
+     Ждём событие deviceready — Cordova полностью загружена
+     ══════════════════════════════════════════ */
+  document.addEventListener('deviceready', function () {
+    console.log('Cordova готова. plugins:', window.plugins);
+  }, false);
+
   /* ══════════════════════════════════════════
      МЕНЮ: ВЫБОР ЗОНЫ
      ══════════════════════════════════════════ */
@@ -563,7 +573,7 @@
       window.AppAvailability.check(
         STANDOFF_PACKAGE,
         function () {
-          alert('AppAvailability: виден, открываю market://');
+          alert('AppAvailability: виден');
           window.open('market://launch?id=' + STANDOFF_PACKAGE, '_system');
         },
         function () {
