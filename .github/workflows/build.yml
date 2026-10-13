@@ -26,6 +26,11 @@ jobs:
           cd app
           cordova platform add android
 
+      - name: Add App Launcher Plugin
+        run: |
+          cd app
+          cordova plugin add cordova-plugin-app-launcher
+
       - name: Build APK
         run: |
           cd app
