@@ -2,7 +2,8 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
 <title>Автонаводка</title>
 
 <style>
@@ -16,87 +17,102 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-  html, body {
+  html {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
     background: #000;
     color: #fff;
-    min-height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    width: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    position: fixed;
+    inset: 0;
     font-family: "DW", system-ui, sans-serif;
-  }
-
-  body {
-    display: flex;
-    justify-content: center;
-    padding: 14px 14px 28px;
+    touch-action: manipulation;
   }
 
   .app {
+    position: relative;
+    height: 100%;
     width: 100%;
-    max-width: 400px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    padding: 6px 12px calc(8px + env(safe-area-inset-bottom)) 12px;
+    padding-top: calc(6px + env(safe-area-inset-top));
+    gap: 4px;
+    overflow: hidden;
   }
 
-  #menu {
+  .top {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    align-items: center;
+    gap: 2px;
+    flex: 0 0 auto;
   }
 
   .top-banner {
-    align-self: center;
-    max-width: 320px;
+    max-width: 260px;
     width: 100%;
+    height: auto;
     display: block;
     user-select: none;
     pointer-events: none;
-    margin-bottom: -4px;
   }
 
   .title {
     text-align: center;
     font-family: "DW", sans-serif;
-    font-size: 34px;
+    font-size: 28px;
     letter-spacing: 2px;
-    margin-top: 0;
     text-transform: uppercase;
+    line-height: 1;
+    margin-top: 2px;
   }
   .subtitle {
     text-align: center;
     color: #4a90e2;
     font-family: "DW", sans-serif;
-    font-size: 16px;
-    letter-spacing: 12px;
-    margin-top: -6px;
-    margin-bottom: 6px;
+    font-size: 13px;
+    letter-spacing: 10px;
+    line-height: 1;
+    margin-left: 10px;
   }
 
   .stage {
     position: relative;
-    flex: 1;
-    min-height: 400px;
+    flex: 1 1 auto;
+    min-height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    transform: translateZ(0);
+    margin-bottom: 14px;
   }
 
   .stage img {
-    max-height: 400px;
-    width: auto;
+    max-height: 100%;
+    max-width: 100%;
     object-fit: contain;
-    filter: drop-shadow(0 0 20px rgba(74,144,226,.35));
     user-select: none;
     pointer-events: none;
+    filter: drop-shadow(0 0 20px rgba(74,144,226,.35));
   }
 
   .placeholder {
     color: #2a2f3a;
-    font-size: 14px;
+    font-size: 12px;
     letter-spacing: 3px;
     border: 1px dashed #23262e;
     border-radius: 12px;
-    padding: 80px 40px;
+    padding: 40px 30px;
     font-family: "DW", sans-serif;
   }
 
@@ -106,13 +122,9 @@
     height: 54px;
     pointer-events: none;
     transform: translate(-50%, -50%);
-    transition: top .35s cubic-bezier(.4,1.6,.5,1),
-                left .35s cubic-bezier(.4,1.6,.5,1),
-                width .25s ease,
-                height .25s ease;
     top: 11%;
     left: 50%;
-    filter: drop-shadow(0 0 8px rgba(74,144,226,.75));
+    backface-visibility: hidden;
   }
 
   .marker .ring {
@@ -124,14 +136,13 @@
                  rgba(74,144,226,.18) 0%,
                  rgba(74,144,226,.03) 60%,
                  transparent 70%);
+    box-shadow: 0 0 10px rgba(74,144,226,.55);
   }
-
-  .marker .line { position: absolute; background: #4a90e2; }
+  .marker .line { position: absolute; background: #4a90e2; box-shadow: 0 0 6px rgba(74,144,226,.7); }
   .marker .line.t { top: -6px;    left: 50%; width: 2px; height: 10px; transform: translateX(-50%); }
   .marker .line.b { bottom: -6px; left: 50%; width: 2px; height: 10px; transform: translateX(-50%); }
   .marker .line.l { left: -6px;   top: 50%;  height: 2px; width: 10px; transform: translateY(-50%); }
   .marker .line.r { right: -6px;  top: 50%;  height: 2px; width: 10px; transform: translateY(-50%); }
-
   .marker .corner {
     position: absolute;
     width: 6px; height: 6px;
@@ -141,7 +152,6 @@
   .marker .corner.tr { top: 0;    right: 0;   border-left: none;   border-bottom: none; border-radius: 0 3px 0 0; }
   .marker .corner.bl { bottom: 0; left: 0;    border-right: none;  border-top: none;    border-radius: 0 0 0 3px; }
   .marker .corner.br { bottom: 0; right: 0;   border-left: none;   border-top: none;    border-radius: 0 0 3px 0; }
-
   .marker .core {
     position: absolute;
     top: 50%; left: 50%;
@@ -151,129 +161,114 @@
     transform: translate(-50%,-50%);
     box-shadow: 0 0 8px #4a90e2, 0 0 16px #4a90e2;
   }
-
   .marker .label {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 6px);
     left: 50%;
     transform: translateX(-50%);
     font-family: "DW", sans-serif;
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 3px;
     color: #d7ebff;
     background: rgba(13,26,48,.85);
     border: 1px solid #2f7fff;
     border-radius: 4px;
-    padding: 3px 8px;
+    padding: 2px 6px;
     white-space: nowrap;
     box-shadow: 0 0 10px rgba(47,127,255,.5);
+  }
+
+  .bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 0 0 auto;
   }
 
   .panel {
     background: #14161b;
     border: 1px solid #23262e;
-    border-radius: 16px;
-    padding: 14px 14px 16px;
+    border-radius: 14px;
+    padding: 8px 10px 10px;
   }
   .panel-title {
     color: #6b7280;
     font-family: "DW", sans-serif;
-    font-size: 13px;
-    letter-spacing: 5px;
-    margin-bottom: 12px;
+    font-size: 11px;
+    letter-spacing: 4px;
+    margin-bottom: 6px;
   }
 
   .grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
+    gap: 6px;
   }
 
   .part {
     background: #0b0d10;
     border: 1px solid #23262e;
-    border-radius: 12px;
-    padding: 10px 4px 8px;
+    border-radius: 10px;
+    padding: 6px 4px 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    justify-content: flex-end;
+    gap: 4px;
     cursor: pointer;
-    transition: .15s;
     color: #6b7280;
     font-family: "DW", sans-serif;
-    font-size: 11px;
-    letter-spacing: 2px;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    transition: background-color .15s, border-color .15s, color .15s;
   }
+
+  .part .icon-box {
+    width: 100%;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .part .icon {
-    width: 32px;
-    height: 32px;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
     object-fit: contain;
     filter: grayscale(1) brightness(.55);
     transition: filter .15s;
     user-select: none;
     pointer-events: none;
   }
+
   .part.active {
     border-color: #2f7fff;
     background: #0c1a30;
     color: #fff;
-    box-shadow: 0 0 0 1px #2f7fff inset, 0 0 12px rgba(47,127,255,.25);
+    box-shadow: 0 0 0 1px #2f7fff inset, 0 0 12px rgba(47,127,255,.3);
   }
-  .part.active .icon {
-    filter: none;
-    filter: drop-shadow(0 0 6px rgba(74,144,226,.9));
-  }
+  .part.active .icon { filter: none; }
 
-  /* ══════════════════════════════════════════
-     КНОПКА СТАРТ — заметная анимация
-     ══════════════════════════════════════════ */
   .start {
     width: 100%;
     background: #2563eb;
     border: none;
-    border-radius: 22px;
+    border-radius: 18px;
     color: #fff;
     font-family: Arial, "Helvetica Neue", sans-serif;
-    font-size: 30px;
+    font-size: 26px;
     font-weight: 700;
-    padding: 20px 16px;
+    padding: 14px 16px;
     cursor: pointer;
-    margin-top: 6px;
     position: relative;
     overflow: hidden;
-    transition: background .15s ease;
-    will-change: transform;
+    transition: background-color .15s;
   }
-  .start:hover { background: #1d4fd8; }
+  .start:hover  { background: #1d4fd8; }
+  .start:active { background: #1740b5; }
 
-  /* Кнопка сжимается + синее свечение — анимация через JS-класс .pressed */
-  .start.pressed {
-    animation: btnPress .45s ease;
-  }
-  @keyframes btnPress {
-    0%   { transform: scale(1);    box-shadow: 0 0 0 rgba(37,99,235,0); }
-    35%  { transform: scale(.93);  box-shadow: 0 0 32px rgba(37,99,235,.9); }
-    70%  { transform: scale(1.04); box-shadow: 0 0 40px rgba(37,99,235,.5); }
-    100% { transform: scale(1);    box-shadow: 0 0 0 rgba(37,99,235,0); }
-  }
-
-  /* Волна-рябь по кнопке при клике */
-  .start .ripple {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255,255,255,.45);
-    transform: scale(0);
-    animation: rippleAnim .6s ease-out;
-    pointer-events: none;
-  }
-  @keyframes rippleAnim {
-    to { transform: scale(3.5); opacity: 0; }
-  }
-
-  /* ══════════════════════════════════════════
-     ЭКРАН ЗАГРУЗКИ — плавный выезд снизу + fade
-     ══════════════════════════════════════════ */
   #loading {
     position: fixed;
     inset: 0;
@@ -282,62 +277,51 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 28px;
+    gap: 24px;
     padding: 24px;
     z-index: 100;
-    opacity: 0;
-    transform: translateY(28px);
-    transition: opacity .45s ease, transform .45s cubic-bezier(.2,.9,.3,1.15);
+    overflow: hidden;
   }
-  #loading.show {
-    display: flex;
-    opacity: 1;
-    transform: translateY(0);
-  }
+  #loading.show { display: flex; }
 
   #loading .l-title {
     font-family: Arial, "Helvetica Neue", sans-serif;
-    font-size: 30px;
+    font-size: 28px;
     font-weight: 700;
     color: #fff;
     text-align: center;
-    letter-spacing: .5px;
   }
-
   #loading .l-sub {
     font-family: Arial, "Helvetica Neue", sans-serif;
-    font-size: 15px;
+    font-size: 14px;
     color: #6b7280;
     text-align: center;
-    max-width: 320px;
-    line-height: 1.45;
-    min-height: 44px;
+    max-width: 300px;
+    line-height: 1.4;
+    min-height: 40px;
   }
 
   #loading .bar-wrap {
     position: relative;
     width: 82%;
-    max-width: 340px;
+    max-width: 320px;
     height: 10px;
   }
   #loading .bar {
     position: absolute;
     inset: 0;
     background: #1e2430;
-    clip-path: polygon(
-      8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%
-    );
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
   }
   #loading .bar-fill {
     position: absolute;
     top: 0; left: 0;
     height: 100%;
-    width: 0%;
+    width: 100%;
     background: #2563eb;
-    clip-path: polygon(
-      8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%
-    );
-    transition: none;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+    transform-origin: left center;
+    transform: scaleX(0);
   }
   #loading .bar-knob {
     position: absolute;
@@ -349,76 +333,92 @@
     transform: translate(-50%, -50%) rotate(45deg);
     border-radius: 3px;
     box-shadow: 0 2px 8px rgba(0,0,0,.5);
-    transition: none;
     pointer-events: none;
   }
 
   #loading .pct {
     font-family: Arial, "Helvetica Neue", sans-serif;
-    font-size: 46px;
+    font-size: 42px;
     font-weight: 700;
     color: #2563eb;
     letter-spacing: 1px;
     font-variant-numeric: tabular-nums;
   }
-  #loading .pct .sign { font-size: 30px; }
+  #loading .pct .sign { font-size: 26px; }
+
+  @media (max-height: 720px) {
+    .title      { font-size: 24px; }
+    .subtitle   { font-size: 12px; letter-spacing: 8px; margin-left: 8px; }
+    .top-banner { max-width: 220px; }
+    .part .icon-box { height: 34px; }
+    .part       { font-size: 9px; padding: 5px 3px; }
+    .start      { font-size: 22px; padding: 12px; border-radius: 16px; }
+    .marker .label { font-size: 10px; }
+    .stage      { margin-bottom: 10px; }
+  }
+  @media (max-height: 600px) {
+    .title      { font-size: 20px; }
+    .subtitle   { font-size: 10px; letter-spacing: 6px; margin-left: 6px; }
+    .top-banner { max-width: 180px; }
+    .panel-title { font-size: 10px; margin-bottom: 4px; }
+    .part .icon-box { height: 28px; }
+    .start      { font-size: 20px; padding: 10px; }
+    .stage      { margin-bottom: 6px; }
+  }
 </style>
 </head>
 <body>
 
 <div class="app">
 
-  <div id="menu">
+  <div class="top">
+    <img class="top-banner" src="tg.png" alt="Telegram" onerror="this.style.display='none';">
+    <div class="title">Автонаводка</div>
+    <div class="subtitle">S O 2</div>
+  </div>
 
-    <img class="top-banner" src="tg.png" alt="Telegram"
-         onerror="this.style.display='none';">
+  <div class="stage" id="stage">
+    <img id="char" src="character.png" alt="Персонаж"
+         onerror="this.style.display='none'; document.getElementById('ph').style.display='block';">
+    <div class="placeholder" id="ph" style="display:none;">[ CHARACTER.PNG ]</div>
 
-    <div>
-      <div class="title">Автонаводка</div>
-      <div class="subtitle">S O 2</div>
+    <div class="marker" id="marker">
+      <div class="ring"></div>
+      <div class="line t"></div>
+      <div class="line b"></div>
+      <div class="line l"></div>
+      <div class="line r"></div>
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <div class="core"></div>
+      <div class="label" id="markerLabel">ГОЛОВА</div>
     </div>
+  </div>
 
-    <div class="stage" id="stage">
-      <img id="char" src="character.png" alt="Персонаж"
-           onerror="this.style.display='none'; document.getElementById('ph').style.display='block';">
-      <div class="placeholder" id="ph" style="display:none;">[ CHARACTER.PNG ]</div>
-
-      <div class="marker" id="marker">
-        <div class="ring"></div>
-        <div class="line t"></div>
-        <div class="line b"></div>
-        <div class="line l"></div>
-        <div class="line r"></div>
-        <div class="corner tl"></div>
-        <div class="corner tr"></div>
-        <div class="corner bl"></div>
-        <div class="corner br"></div>
-        <div class="core"></div>
-        <div class="label" id="markerLabel">ГОЛОВА</div>
-      </div>
-    </div>
-
+  <div class="bottom">
     <div class="panel">
       <div class="panel-title">ЗОНА ПОРАЖЕНИЯ</div>
       <div class="grid" id="grid">
 
         <button class="part active" data-part="head">
-          <img class="icon" src="head.png" alt="Голова" onerror="this.style.opacity=.25">
+          <div class="icon-box"><img class="icon" src="head.png" alt="" onerror="this.style.opacity=.25"></div>
           ГОЛОВА
         </button>
 
         <button class="part" data-part="body">
-          <img class="icon" src="body.png" alt="Живот" onerror="this.style.opacity=.25">
+          <div class="icon-box"><img class="icon" src="body.png" alt="" onerror="this.style.opacity=.25"></div>
           ЖИВОТ
         </button>
 
         <button class="part" data-part="arms">
-          <img class="icon" src="arms.png" alt="Руки" onerror="this.style.opacity=.25">
+          <div class="icon-box"><img class="icon" src="arms.png" alt="" onerror="this.style.opacity=.25"></div>
           РУКИ
         </button>
 
         <button class="part" data-part="legs">
-          <img class="icon" src="legs.png" alt="Ноги" onerror="this.style.opacity=.25">
+          <div class="icon-box"><img class="icon" src="legs.png" alt="" onerror="this.style.opacity=.25"></div>
           НОГИ
         </button>
 
@@ -426,15 +426,13 @@
     </div>
 
     <button class="start" id="start">Старт</button>
-
   </div>
 
 </div>
 
-<!-- ═══════════ ЭКРАН ЗАГРУЗКИ ═══════════ -->
 <div id="loading">
   <div class="l-title" id="lTitle">Запуск игры...</div>
-  <div class="l-sub"   id="lSub">Инициализация...</div>
+  <div class="l-sub"   id="lSub">Инициализация модуля...</div>
 
   <div class="bar-wrap">
     <div class="bar"></div>
@@ -446,7 +444,9 @@
 </div>
 
 <script>
-  /* ── Меню: выбор зоны ── */
+  /* ══════════════════════════════════════════
+     МЕНЮ: ВЫБОР ЗОНЫ
+     ══════════════════════════════════════════ */
   const grid        = document.getElementById('grid');
   const marker      = document.getElementById('marker');
   const markerLabel = document.getElementById('markerLabel');
@@ -479,7 +479,7 @@
   applyZone('head');
 
   /* ══════════════════════════════════════════
-     ЛОГИКА ЗАГРУЗКИ
+     ЗАГРУЗКА
      ══════════════════════════════════════════ */
   const STEPS = [
     { at: 0,   sub: 'Инициализация модуля...' },
@@ -488,7 +488,7 @@
     { at: 55,  sub: 'Калибровка модуля наведения...' },
     { at: 75,  sub: 'Применение конфигурации и защита памяти...' },
     { at: 92,  sub: 'Финальная проверка...' },
-    { at: 100, sub: 'Успешно. Модуль активирован.' }
+    { at: 100, sub: 'Успешно. Запуск Standoff 2...' }
   ];
 
   const loading = document.getElementById('loading');
@@ -504,23 +504,66 @@
   function setProgress(value) {
     value = Math.min(100, Math.max(0, value));
 
-    barFill.style.width = value + '%';
+    barFill.style.transform = 'scaleX(' + (value / 100) + ')';
 
     const wrap   = barFill.parentElement;
     const w      = wrap.clientWidth;
     const usable = w - 16;
     const knobX  = 8 + (value / 100) * usable;
-    barKnob.style.left = knobX + 'px';
+    barKnob.style.transform =
+      'translate(' + (knobX - 9) + 'px, -50%) rotate(45deg)';
 
     pct.innerHTML = value.toFixed(1) + '<span class="sign">%</span>';
 
-    // смена текста — мгновенно, без моргания
     for (let i = 0; i < STEPS.length; i++) {
       if (value >= STEPS[i].at && lastStep !== i) {
         lastStep = i;
         lSub.textContent = STEPS[i].sub;
       }
     }
+  }
+
+  /* ══════════════════════════════════════════
+     ЗАПУСК STANDOFF 2 (только в APK)
+     ══════════════════════════════════════════ */
+  const STANDOFF_PACKAGE = 'com.axlebolt.standoff2';
+
+  function launchStandoff() {
+    // Способ 1: Cordova-плагин app-launcher
+    if (window.cordova && window.launcher) {
+      window.launcher.canLaunch(
+        { packageName: STANDOFF_PACKAGE },
+        function (can) {
+          if (can) {
+            window.launcher.launch(
+              { packageName: STANDOFF_PACKAGE },
+              function () { console.log('Standoff 2 запущен'); },
+              function (e) { console.warn('Ошибка запуска:', e); }
+            );
+          } else {
+            console.warn('Standoff 2 не установлен');
+            alert('Standoff 2 не установлен на устройстве');
+          }
+        },
+        function (e) { console.warn('canLaunch error:', e); }
+      );
+      return;
+    }
+
+    // Способ 2 (запасной): через Android intent:// URL
+    // работает в некоторых WebView, но не во всех
+    try {
+      const intentUrl = 'intent://launch#Intent;scheme=standoff;package=' +
+                        STANDOFF_PACKAGE + ';end';
+      window.location.href = intentUrl;
+    } catch (e) {
+      console.warn('Intent fallback failed:', e);
+    }
+
+    // Способ 3 (совсем запасной): market:// открытие страницы игры
+    // setTimeout(() => {
+    //   window.location.href = 'market://details?id=' + STANDOFF_PACKAGE;
+    // }, 800);
   }
 
   function runLoading() {
@@ -544,11 +587,16 @@
         if (t < 1) {
           rafId = requestAnimationFrame(tick);
         } else {
+          // ═══ ФИНАЛ: показываем «Готово» и через 1.4 сек запускаем Standoff 2 ═══
           lTitle.textContent = 'Готово';
           lSub.textContent   = 'Успешно. Модуль активирован.';
+
           setTimeout(() => {
             loading.classList.remove('show');
-          }, 1200);
+
+            // 🚀 ЗАПУСК STANDOFF 2
+            launchStandoff();
+          }, 1400);
         }
       }
 
@@ -556,37 +604,22 @@
     });
   }
 
-  /* ══════════════════════════════════════════
-     КНОПКА СТАРТ — видимая анимация + запуск
-     ══════════════════════════════════════════ */
-  const startBtn = document.getElementById('start');
-
-  startBtn.addEventListener('click', (e) => {
-    // 1. РЯБЬ по кнопке (ripple)
-    const rect = startBtn.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height);
-    const ripple = document.createElement('span');
-    ripple.className = 'ripple';
-    ripple.style.width  = size + 'px';
-    ripple.style.height = size + 'px';
-    ripple.style.left   = (e.clientX - rect.left - size / 2) + 'px';
-    ripple.style.top    = (e.clientY - rect.top  - size / 2) + 'px';
-    startBtn.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 650);
-
-    // 2. СЖАТИЕ + СВЕЧЕНИЕ (btnPress)
-    startBtn.classList.remove('pressed');
-    // перезапуск анимации (reflow)
-    void startBtn.offsetWidth;
-    startBtn.classList.add('pressed');
-
-    // 3. Запуск загрузки ПОСЛЕ окончания анимации кнопки (450мс)
-    setTimeout(() => {
-      const active = grid.querySelector('.part.active');
-      console.log('Зона:', active.dataset.part);
-      runLoading();
-    }, 480);
+  document.getElementById('start').addEventListener('click', () => {
+    const active = grid.querySelector('.part.active');
+    console.log('Зона:', active.dataset.part);
+    runLoading();
   });
+
+  /* ══════════════════════════════════════════
+     Блокировка скролла и зума
+     ══════════════════════════════════════════ */
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  document.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('wheel', (e) => {
+    e.preventDefault();
+  }, { passive: false });
 </script>
 
 </body>
