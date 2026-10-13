@@ -1,0 +1,38 @@
+name: Build APK
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Cordova
+        run: npm install -g cordova
+
+      - name: Create Cordova Project
+        run: |
+          cordova create app com.bucheat.aimbot Aimbot
+          cd app
+          rm -rf www/*
+          cp -r ../* www/ 2>/dev/null || true
+          rm -rf www/.github 2>/dev/null || true
+
+      - name: Add Android Platform
+        run: |
+          cd app
+          cordova platform add android
+
+      - name: Build APK
+        run: |
+          cd app
+          cordova build android
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/platforms/android/app/build/outputs/apk/debug/*.apk
