@@ -21,6 +21,34 @@ jobs:
           cp -r ../* www/ 2>/dev/null || true
           rm -rf www/.github 2>/dev/null || true
 
+      - name: Add Queries for Standoff 2
+        run: |
+          cd app
+          # Заменяем <platform name="android"></platform> на блок с queries
+          python3 - <<'PY'
+          import re
+          with open('config.xml', 'r', encoding='utf-8') as f:
+              xml = f.read()
+
+          block = '''<platform name="android">
+              <config-file target="AndroidManifest.xml" parent="/manifest">
+                  <queries>
+                      <package android:name="com.axlebolt.standoff2" />
+                  </queries>
+              </config-file>
+          </platform>'''
+
+          if '<platform name="android"' in xml:
+              xml = re.sub(r'<platform name="android">.*?</platform>', block, xml, flags=re.DOTALL)
+          else:
+              xml = xml.replace('</widget>', block + '\n</widget>')
+
+          with open('config.xml', 'w', encoding='utf-8') as f:
+              f.write(xml)
+          print('--- config.xml after edit ---')
+          print(xml)
+          PY
+
       - name: Add Android Platform
         run: |
           cd app
