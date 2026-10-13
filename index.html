@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Автонаводка</title>
+
+<style>
+  @font-face {
+    font-family: "DW";
+    src: url("dW.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    background: #000;
+    color: #fff;
+    min-height: 100vh;
+    font-family: "DW", system-ui, sans-serif;
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
+    padding: 14px 14px 28px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #menu {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .top-banner {
+    align-self: center;
+    max-width: 320px;
+    width: 100%;
+    display: block;
+    user-select: none;
+    pointer-events: none;
+    margin-bottom: -4px;
+  }
+
+  .title {
+    text-align: center;
+    font-family: "DW", sans-serif;
+    font-size: 34px;
+    letter-spacing: 2px;
+    margin-top: 0;
+    text-transform: uppercase;
+  }
+  .subtitle {
+    text-align: center;
+    color: #4a90e2;
+    font-family: "DW", sans-serif;
+    font-size: 16px;
+    letter-spacing: 12px;
+    margin-top: -6px;
+    margin-bottom: 6px;
+  }
+
+  .stage {
+    position: relative;
+    flex: 1;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .stage img {
+    max-height: 400px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 0 20px rgba(74,144,226,.35));
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .placeholder {
+    color: #2a2f3a;
+    font-size: 14px;
+    letter-spacing: 3px;
+    border: 1px dashed #23262e;
+    border-radius: 12px;
+    padding: 80px 40px;
+    font-family: "DW", sans-serif;
+  }
+
+  .marker {
+    position: absolute;
+    width: 54px;
+    height: 54px;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: top .35s cubic-bezier(.4,1.6,.5,1),
+                left .35s cubic-bezier(.4,1.6,.5,1),
+                width .25s ease,
+                height .25s ease;
+    top: 11%;
+    left: 50%;
+    filter: drop-shadow(0 0 8px rgba(74,144,226,.75));
+  }
+
+  .marker .ring {
+    position: absolute;
+    inset: 6px;
+    border-radius: 50%;
+    border: 2px solid #4a90e2;
+    background: radial-gradient(circle,
+                 rgba(74,144,226,.18) 0%,
+                 rgba(74,144,226,.03) 60%,
+                 transparent 70%);
+  }
+
+  .marker .line { position: absolute; background: #4a90e2; }
+  .marker .line.t { top: -6px;    left: 50%; width: 2px; height: 10px; transform: translateX(-50%); }
+  .marker .line.b { bottom: -6px; left: 50%; width: 2px; height: 10px; transform: translateX(-50%); }
+  .marker .line.l { left: -6px;   top: 50%;  height: 2px; width: 10px; transform: translateY(-50%); }
+  .marker .line.r { right: -6px;  top: 50%;  height: 2px; width: 10px; transform: translateY(-50%); }
+
+  .marker .corner {
+    position: absolute;
+    width: 6px; height: 6px;
+    border: 1.5px solid #8fc1ff;
+  }
+  .marker .corner.tl { top: 0;    left: 0;    border-right: none;  border-bottom: none; border-radius: 3px 0 0 0; }
+  .marker .corner.tr { top: 0;    right: 0;   border-left: none;   border-bottom: none; border-radius: 0 3px 0 0; }
+  .marker .corner.bl { bottom: 0; left: 0;    border-right: none;  border-top: none;    border-radius: 0 0 0 3px; }
+  .marker .corner.br { bottom: 0; right: 0;   border-left: none;   border-top: none;    border-radius: 0 0 3px 0; }
+
+  .marker .core {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 5px; height: 5px;
+    background: #d7ebff;
+    border-radius: 50%;
+    transform: translate(-50%,-50%);
+    box-shadow: 0 0 8px #4a90e2, 0 0 16px #4a90e2;
+  }
+
+  .marker .label {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: "DW", sans-serif;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: #d7ebff;
+    background: rgba(13,26,48,.85);
+    border: 1px solid #2f7fff;
+    border-radius: 4px;
+    padding: 3px 8px;
+    white-space: nowrap;
+    box-shadow: 0 0 10px rgba(47,127,255,.5);
+  }
+
+  .panel {
+    background: #14161b;
+    border: 1px solid #23262e;
+    border-radius: 16px;
+    padding: 14px 14px 16px;
+  }
+  .panel-title {
+    color: #6b7280;
+    font-family: "DW", sans-serif;
+    font-size: 13px;
+    letter-spacing: 5px;
+    margin-bottom: 12px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .part {
+    background: #0b0d10;
+    border: 1px solid #23262e;
+    border-radius: 12px;
+    padding: 10px 4px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: .15s;
+    color: #6b7280;
+    font-family: "DW", sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+  }
+  .part .icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    filter: grayscale(1) brightness(.55);
+    transition: filter .15s;
+    user-select: none;
+    pointer-events: none;
+  }
+  .part.active {
+    border-color: #2f7fff;
+    background: #0c1a30;
+    color: #fff;
+    box-shadow: 0 0 0 1px #2f7fff inset, 0 0 12px rgba(47,127,255,.25);
+  }
+  .part.active .icon {
+    filter: none;
+    filter: drop-shadow(0 0 6px rgba(74,144,226,.9));
+  }
+
+  /* ══════════════════════════════════════════
+     КНОПКА СТАРТ — заметная анимация
+     ══════════════════════════════════════════ */
+  .start {
+    width: 100%;
+    background: #2563eb;
+    border: none;
+    border-radius: 22px;
+    color: #fff;
+    font-family: Arial, "Helvetica Neue", sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    padding: 20px 16px;
+    cursor: pointer;
+    margin-top: 6px;
+    position: relative;
+    overflow: hidden;
+    transition: background .15s ease;
+    will-change: transform;
+  }
+  .start:hover { background: #1d4fd8; }
+
+  /* Кнопка сжимается + синее свечение — анимация через JS-класс .pressed */
+  .start.pressed {
+    animation: btnPress .45s ease;
+  }
+  @keyframes btnPress {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 rgba(37,99,235,0); }
+    35%  { transform: scale(.93);  box-shadow: 0 0 32px rgba(37,99,235,.9); }
+    70%  { transform: scale(1.04); box-shadow: 0 0 40px rgba(37,99,235,.5); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 rgba(37,99,235,0); }
+  }
+
+  /* Волна-рябь по кнопке при клике */
+  .start .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,.45);
+    transform: scale(0);
+    animation: rippleAnim .6s ease-out;
+    pointer-events: none;
+  }
+  @keyframes rippleAnim {
+    to { transform: scale(3.5); opacity: 0; }
+  }
+
+  /* ══════════════════════════════════════════
+     ЭКРАН ЗАГРУЗКИ — плавный выезд снизу + fade
+     ══════════════════════════════════════════ */
+  #loading {
+    position: fixed;
+    inset: 0;
+    background: #0a0c10;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    padding: 24px;
+    z-index: 100;
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity .45s ease, transform .45s cubic-bezier(.2,.9,.3,1.15);
+  }
+  #loading.show {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  #loading .l-title {
+    font-family: Arial, "Helvetica Neue", sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    letter-spacing: .5px;
+  }
+
+  #loading .l-sub {
+    font-family: Arial, "Helvetica Neue", sans-serif;
+    font-size: 15px;
+    color: #6b7280;
+    text-align: center;
+    max-width: 320px;
+    line-height: 1.45;
+    min-height: 44px;
+  }
+
+  #loading .bar-wrap {
+    position: relative;
+    width: 82%;
+    max-width: 340px;
+    height: 10px;
+  }
+  #loading .bar {
+    position: absolute;
+    inset: 0;
+    background: #1e2430;
+    clip-path: polygon(
+      8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%
+    );
+  }
+  #loading .bar-fill {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    width: 0%;
+    background: #2563eb;
+    clip-path: polygon(
+      8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%
+    );
+    transition: none;
+  }
+  #loading .bar-knob {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    transform: translate(-50%, -50%) rotate(45deg);
+    border-radius: 3px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.5);
+    transition: none;
+    pointer-events: none;
+  }
+
+  #loading .pct {
+    font-family: Arial, "Helvetica Neue", sans-serif;
+    font-size: 46px;
+    font-weight: 700;
+    color: #2563eb;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  #loading .pct .sign { font-size: 30px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div id="menu">
+
+    <img class="top-banner" src="tg.png" alt="Telegram"
+         onerror="this.style.display='none';">
+
+    <div>
+      <div class="title">Автонаводка</div>
+      <div class="subtitle">S O 2</div>
+    </div>
+
+    <div class="stage" id="stage">
+      <img id="char" src="character.png" alt="Персонаж"
+           onerror="this.style.display='none'; document.getElementById('ph').style.display='block';">
+      <div class="placeholder" id="ph" style="display:none;">[ CHARACTER.PNG ]</div>
+
+      <div class="marker" id="marker">
+        <div class="ring"></div>
+        <div class="line t"></div>
+        <div class="line b"></div>
+        <div class="line l"></div>
+        <div class="line r"></div>
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+        <div class="core"></div>
+        <div class="label" id="markerLabel">ГОЛОВА</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">ЗОНА ПОРАЖЕНИЯ</div>
+      <div class="grid" id="grid">
+
+        <button class="part active" data-part="head">
+          <img class="icon" src="head.png" alt="Голова" onerror="this.style.opacity=.25">
+          ГОЛОВА
+        </button>
+
+        <button class="part" data-part="body">
+          <img class="icon" src="body.png" alt="Живот" onerror="this.style.opacity=.25">
+          ЖИВОТ
+        </button>
+
+        <button class="part" data-part="arms">
+          <img class="icon" src="arms.png" alt="Руки" onerror="this.style.opacity=.25">
+          РУКИ
+        </button>
+
+        <button class="part" data-part="legs">
+          <img class="icon" src="legs.png" alt="Ноги" onerror="this.style.opacity=.25">
+          НОГИ
+        </button>
+
+      </div>
+    </div>
+
+    <button class="start" id="start">Старт</button>
+
+  </div>
+
+</div>
+
+<!-- ═══════════ ЭКРАН ЗАГРУЗКИ ═══════════ -->
+<div id="loading">
+  <div class="l-title" id="lTitle">Запуск игры...</div>
+  <div class="l-sub"   id="lSub">Инициализация...</div>
+
+  <div class="bar-wrap">
+    <div class="bar"></div>
+    <div class="bar-fill" id="barFill"></div>
+    <div class="bar-knob" id="barKnob"></div>
+  </div>
+
+  <div class="pct" id="pct">0.0<span class="sign">%</span></div>
+</div>
+
+<script>
+  /* ── Меню: выбор зоны ── */
+  const grid        = document.getElementById('grid');
+  const marker      = document.getElementById('marker');
+  const markerLabel = document.getElementById('markerLabel');
+
+  const POSITIONS = {
+    head: { top: '11%', left: '50%', label: 'ГОЛОВА', size: 42 },
+    body: { top: '38%', left: '50%', label: 'ЖИВОТ',  size: 54 },
+    arms: { top: '44%', left: '18%', label: 'РУКИ',   size: 54 },
+    legs: { top: '72%', left: '50%', label: 'НОГИ',   size: 54 }
+  };
+
+  function applyZone(key) {
+    const pos = POSITIONS[key];
+    if (!pos) return;
+    marker.style.top    = pos.top;
+    marker.style.left   = pos.left;
+    marker.style.width  = pos.size + 'px';
+    marker.style.height = pos.size + 'px';
+    markerLabel.textContent = pos.label;
+  }
+
+  grid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.part');
+    if (!btn) return;
+    grid.querySelectorAll('.part').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyZone(btn.dataset.part);
+  });
+
+  applyZone('head');
+
+  /* ══════════════════════════════════════════
+     ЛОГИКА ЗАГРУЗКИ
+     ══════════════════════════════════════════ */
+  const STEPS = [
+    { at: 0,   sub: 'Инициализация модуля...' },
+    { at: 15,  sub: 'Внедрение данных и обход защиты...' },
+    { at: 35,  sub: 'Синхронизация с игровым движком...' },
+    { at: 55,  sub: 'Калибровка модуля наведения...' },
+    { at: 75,  sub: 'Применение конфигурации и защита памяти...' },
+    { at: 92,  sub: 'Финальная проверка...' },
+    { at: 100, sub: 'Успешно. Модуль активирован.' }
+  ];
+
+  const loading = document.getElementById('loading');
+  const lTitle  = document.getElementById('lTitle');
+  const lSub    = document.getElementById('lSub');
+  const barFill = document.getElementById('barFill');
+  const barKnob = document.getElementById('barKnob');
+  const pct     = document.getElementById('pct');
+
+  let rafId    = null;
+  let lastStep = -1;
+
+  function setProgress(value) {
+    value = Math.min(100, Math.max(0, value));
+
+    barFill.style.width = value + '%';
+
+    const wrap   = barFill.parentElement;
+    const w      = wrap.clientWidth;
+    const usable = w - 16;
+    const knobX  = 8 + (value / 100) * usable;
+    barKnob.style.left = knobX + 'px';
+
+    pct.innerHTML = value.toFixed(1) + '<span class="sign">%</span>';
+
+    // смена текста — мгновенно, без моргания
+    for (let i = 0; i < STEPS.length; i++) {
+      if (value >= STEPS[i].at && lastStep !== i) {
+        lastStep = i;
+        lSub.textContent = STEPS[i].sub;
+      }
+    }
+  }
+
+  function runLoading() {
+    cancelAnimationFrame(rafId);
+    setProgress(0);
+    lastStep = -1;
+    lTitle.textContent = 'Запуск игры...';
+    lSub.textContent   = 'Инициализация модуля...';
+
+    loading.classList.add('show');
+
+    requestAnimationFrame(() => {
+      const DURATION  = 7500;
+      const startTime = performance.now();
+
+      function tick(now) {
+        const t   = Math.min(1, (now - startTime) / DURATION);
+        const val = t * 100;
+        setProgress(val);
+
+        if (t < 1) {
+          rafId = requestAnimationFrame(tick);
+        } else {
+          lTitle.textContent = 'Готово';
+          lSub.textContent   = 'Успешно. Модуль активирован.';
+          setTimeout(() => {
+            loading.classList.remove('show');
+          }, 1200);
+        }
+      }
+
+      rafId = requestAnimationFrame(tick);
+    });
+  }
+
+  /* ══════════════════════════════════════════
+     КНОПКА СТАРТ — видимая анимация + запуск
+     ══════════════════════════════════════════ */
+  const startBtn = document.getElementById('start');
+
+  startBtn.addEventListener('click', (e) => {
+    // 1. РЯБЬ по кнопке (ripple)
+    const rect = startBtn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    ripple.style.width  = size + 'px';
+    ripple.style.height = size + 'px';
+    ripple.style.left   = (e.clientX - rect.left - size / 2) + 'px';
+    ripple.style.top    = (e.clientY - rect.top  - size / 2) + 'px';
+    startBtn.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 650);
+
+    // 2. СЖАТИЕ + СВЕЧЕНИЕ (btnPress)
+    startBtn.classList.remove('pressed');
+    // перезапуск анимации (reflow)
+    void startBtn.offsetWidth;
+    startBtn.classList.add('pressed');
+
+    // 3. Запуск загрузки ПОСЛЕ окончания анимации кнопки (450мс)
+    setTimeout(() => {
+      const active = grid.querySelector('.part.active');
+      console.log('Зона:', active.dataset.part);
+      runLoading();
+    }, 480);
+  });
+</script>
+
+</body>
+</html>
