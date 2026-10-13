@@ -443,17 +443,10 @@
   <div class="pct" id="pct">0.0<span class="sign">%</span></div>
 </div>
 
-<!-- ⚠️ ГЛАВНАЯ ПРАВКА: подключаем Cordova -->
+<!-- Подключение Cordova — обязательно -->
 <script src="cordova.js"></script>
 
 <script>
-  /* ══════════════════════════════════════════
-     Ждём событие deviceready — Cordova полностью загружена
-     ══════════════════════════════════════════ */
-  document.addEventListener('deviceready', function () {
-    console.log('Cordova готова. plugins:', window.plugins);
-  }, false);
-
   /* ══════════════════════════════════════════
      МЕНЮ: ВЫБОР ЗОНЫ
      ══════════════════════════════════════════ */
@@ -534,63 +527,27 @@
   }
 
   /* ══════════════════════════════════════════
-     ЗАПУСК STANDOFF 2 С ДИАГНОСТИКОЙ
+     ЗАПУСК STANDOFF 2
      ══════════════════════════════════════════ */
   function launchStandoff() {
     var STANDOFF_PACKAGE = 'com.axlebolt.standoff2';
 
-    // ═══ ДИАГНОСТИКА ═══
-    var diag =
-      'cordova=' + (typeof window.cordova !== 'undefined') +
-      '\nplugins=' + (typeof window.plugins !== 'undefined') +
-      '\nplugins.launcher=' + !!(window.plugins && window.plugins.launcher) +
-      '\nlauncher=' + (typeof window.launcher !== 'undefined') +
-      '\nAppAvailability=' + (typeof window.AppAvailability !== 'undefined');
-
-    alert('DEBUG:\n' + diag);
-
-    // Способ 1: cordova-plugin-app-launcher
     if (window.plugins && window.plugins.launcher) {
       window.plugins.launcher.canLaunch(
         { packageName: STANDOFF_PACKAGE },
         function () {
-          alert('Standoff видно — запускаю');
           window.plugins.launcher.launch(
             { packageName: STANDOFF_PACKAGE },
-            function () { console.log('Запущено'); },
-            function (e) { alert('Ошибка launch: ' + JSON.stringify(e)); }
+            function () { console.log('Standoff 2 запущен'); },
+            function (e) { console.warn('Ошибка запуска:', e); }
           );
         },
         function (e) {
-          alert('Standoff НЕ видно: ' + JSON.stringify(e));
+          console.warn('Standoff 2 не найден:', e);
         }
       );
-      return;
-    }
-
-    // Способ 2: cordova-plugin-appavailability
-    if (window.AppAvailability) {
-      window.AppAvailability.check(
-        STANDOFF_PACKAGE,
-        function () {
-          alert('AppAvailability: виден');
-          window.open('market://launch?id=' + STANDOFF_PACKAGE, '_system');
-        },
-        function () {
-          alert('AppAvailability: не виден');
-        }
-      );
-      return;
-    }
-
-    // Способ 3: intent:// fallback
-    alert('Плагин не найден, пробую intent://');
-    try {
-      window.location.href =
-        'intent://launch#Intent;scheme=standoff;package=' +
-        STANDOFF_PACKAGE + ';end';
-    } catch (e) {
-      alert('Intent fail: ' + e);
+    } else {
+      console.warn('Плагин launcher не загружен');
     }
   }
 
